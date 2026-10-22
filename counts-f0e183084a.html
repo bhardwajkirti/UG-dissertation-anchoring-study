@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recruitment Tracker</title>
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#fcfcfb; --surface-1:#ffffff; --line:#e3e3df;
+    --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#7a7975;
+    --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a;
+    --good:#1baf7a; --warn:#eda100; --bad:#e34948;
+    --radius:12px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --bg:#131312; --surface-1:#1a1a19; --line:#2e2e2b;
+      --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8d8c84;
+      --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70;
+      --good:#199e70; --warn:#c98500; --bad:#e66767;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --bg:#131312; --surface-1:#1a1a19; --line:#2e2e2b;
+    --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8d8c84;
+    --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70;
+    --good:#199e70; --warn:#c98500; --bad:#e66767;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text-primary);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:24px 16px 64px}
+  header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  h1{font-size:30px;margin:0;font-weight:700;letter-spacing:-.015em;flex:1 0 auto}
+  .meta{color:var(--text-muted);font-size:13px;margin:0 0 22px}
+  .card{background:var(--surface-1);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;margin:0 0 16px}
+  .card h2{font-size:14px;margin:0 0 2px;font-weight:650;letter-spacing:.01em}
+  .card .sub{font-size:13px;color:var(--text-secondary);margin:0 0 16px}
+  .hero{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+  .hero .big{font-size:44px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+  .hero .of{color:var(--text-secondary);font-size:15px;padding-bottom:4px}
+  .track{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:14px}
+  .track i{display:block;height:100%;background:var(--series-1);border-radius:99px;width:0;transition:width .4s}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:16px}
+  .tile{border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  .tile .k{font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:6px}
+  .tile .k i{width:9px;height:9px;border-radius:3px;display:inline-block;flex:0 0 auto}
+  .tile .v{font-size:25px;font-weight:650;font-variant-numeric:tabular-nums;margin-top:3px}
+  .tile .d{font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary);margin:0 0 14px}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+  svg{display:block;width:100%;height:auto;overflow:visible}
+  .ax{stroke:var(--line);stroke-width:1}
+  .gl{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4}
+  .tl{stroke:var(--text-secondary);stroke-width:1.5;stroke-dasharray:5 4}
+  text{fill:var(--text-secondary);font-size:11px}
+  text.val{fill:var(--text-primary);font-size:10.5px;font-variant-numeric:tabular-nums}
+  text.cat{fill:var(--text-primary);font-size:12px}
+  .barg rect{rx:4;ry:4}
+  .barg g:hover rect{stroke:var(--text-primary);stroke-width:1.5}
+  table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+  th,td{text-align:right;padding:7px 9px;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--text-secondary);font-weight:600}
+  details{margin-top:12px}
+  summary{cursor:pointer;font-size:13px;color:var(--text-secondary);padding:4px 0}
+  .note{font-size:13px;color:var(--text-secondary);margin:12px 0 0;padding:11px 13px;
+    border-left:3px solid var(--series-2);background:color-mix(in srgb,var(--series-2) 7%,transparent);border-radius:0 8px 8px 0}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:760px){.row2{grid-template-columns:1fr}}
+  .err{color:var(--bad);font-size:14px}
+  button{font:inherit;font-size:13px;padding:7px 13px;border-radius:9px;border:1px solid var(--line);
+    background:var(--surface-1);color:var(--text-primary);cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Recruitment Tracker</h1>
+    <button id="refresh" type="button">Refresh</button>
+    <button id="change" type="button">Change link</button>
+  </header>
+  <p class="meta" id="meta">Loading&hellip;</p>
+  <div id="root"></div>
+</div>
+
+<script>
+// The backend URL is entered on the page itself and kept in this browser,
+// so this file never needs editing.
+/* The URL built into this file always wins. An address connected on this device earlier
+   is kept only as a fallback for a copy that ships without one, because otherwise a
+   stale address saved in the browser silently overrides a freshly deployed backend and
+   the dashboard goes on reading a sheet that is no longer in use. */
+const BAKED = "https://script.google.com/macros/s/AKfycbwiPGCKmARTkCgdgfSZ7hAT4f68Bh7WjgjDGb4r2RM6OnIyn_mHmOl67r7oceOV79EELg/exec";
+let ENDPOINT = BAKED;
+try {
+  if(BAKED) localStorage.setItem("sa_endpoint", BAKED);
+  else ENDPOINT = localStorage.getItem("sa_endpoint") || "";
+} catch(e){}
+const TARGET_TOTAL = 501;
+// First value is the key the backend writes into the sheet, second is the short
+// label shown on the chart. They must stay in step with the band list in the form.
+const BANDS = [
+  ["Below ₹5 lakhs","Below ₹5L"],["₹5 to 10 lakhs","₹5–10L"],
+  ["₹10 to 15 lakhs","₹10–15L"],["₹15 to 20 lakhs","₹15–20L"],
+  ["₹20 to 25 lakhs","₹20–25L"],["₹25 to 30 lakhs","₹25–30L"],
+  ["₹30 to 40 lakhs","₹30–40L"],["₹40 to 60 lakhs","₹40–60L"]
+];
+const CONDS = [["high","High anchor","--series-1"],["low","Low anchor","--series-2"],["control","Control","--series-3"]];
+// Fixed lists, so every option shows with a zero against it rather than vanishing.
+const GENDERS = ["Female","Male","Prefer not to say"];
+const SECTIONS = [
+  ["A","Agriculture"],["B","Mining"],["C","Manufacturing"],["D","Electricity and gas"],
+  ["E","Water and waste"],["F","Construction"],["G","Trade"],["H","Transport"],
+  ["I","Hotels and food"],["J","Publishing and media"],["K","IT and telecom"],
+  ["L","Finance and insurance"],["M","Real estate"],["N","Professional services"],
+  ["O","Admin and support"],["P","Public administration"],["Q","Education"],
+  ["R","Health"],["S","Arts and sport"],["T","Other services"],
+  ["U","Households"],["V","Extraterritorial"]
+];
+// Question 1 screens these three out, so a number here means somebody mis-answered it.
+const IMPOSSIBLE_SECTIONS = ["P","U","V"];
+const TIME_BANDS = ["Under 3","3 to under 5","5 to under 7","7 to under 10",
+                    "10 to under 13","13 to under 16","16 and over"];
+// =================================================================
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cvar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function jsonp(url){
+  return new Promise((res, rej) => {
+    const cb = "cb_" + Math.random().toString(36).slice(2);
+    const t = setTimeout(() => { cleanup(); rej(new Error("timeout")); }, 15000);
+    function cleanup(){ clearTimeout(t); delete window[cb]; if(s.parentNode) s.remove(); }
+    window[cb] = d => { cleanup(); res(d); };
+    const s = document.createElement("script");
+    s.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
+    s.onerror = () => { cleanup(); rej(new Error("network")); };
+    document.body.appendChild(s);
+  });
+}
+
+/* Grouped bars: one group per salary band, three bars per group.
+   Counts are printed on every bar, so identity never rests on colour alone. */
+function groupedBars(groups, series, opts){
+  const W = 940, rowH = 46, barH = 10, gap = 2, padL = 100, padR = 56, padT = 28;
+  const H = padT + groups.length * rowH + 18;
+  const max = Math.max(opts.target || 0, ...groups.flatMap(g => series.map(s => g.v[s.key] || 0)), 1);
+  const x = v => padL + (v / max) * (W - padL - padR);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.aria||"")}">`;
+  for(let i = 0; i <= 4; i++){
+    const v = max * i / 4, xx = x(v);
+    s += `<line class="gl" x1="${xx}" y1="${padT-8}" x2="${xx}" y2="${H-16}"/>`;
+    s += `<text x="${xx}" y="${padT-13}" text-anchor="middle">${Math.round(v)}</text>`;
+  }
+  if(opts.target){
+    s += `<line class="tl" x1="${x(opts.target)}" y1="${padT-8}" x2="${x(opts.target)}" y2="${H-16}"/>`;
+    s += `<text x="${x(opts.target)}" y="${H-4}" text-anchor="middle">target ${opts.target}</text>`;
+  }
+  const stackH = series.length * barH + (series.length - 1) * gap;
+  groups.forEach((g, gi) => {
+    const y0 = padT + gi * rowH;
+    const top = y0 + (rowH - 4 - stackH) / 2;
+    s += `<text class="cat" x="${padL-12}" y="${top + stackH/2 + 4}" text-anchor="end">${esc(g.label)}</text>`;
+    s += `<g class="barg">`;
+    series.forEach((se, si) => {
+      const v = g.v[se.key] || 0;
+      const y = top + si * (barH + gap);
+      const w = Math.max(v > 0 ? 3 : 0, x(v) - padL);
+      s += `<g><title>${esc(g.label)} – ${esc(se.label)}: ${v}</title>`;
+      s += `<rect x="${padL}" y="${y}" width="${w}" height="${barH}" fill="${se.color}"/>`;
+      s += `<text class="val" x="${padL + w + 6}" y="${y + barH - 0.5}">${v}</text></g>`;
+    });
+    s += `</g>`;
+    s += `<line class="ax" x1="${padL}" y1="${y0 + rowH - 2}" x2="${W - padR}" y2="${y0 + rowH - 2}" opacity=".5"/>`;
+  });
+  s += `<line class="ax" x1="${padL}" y1="${padT-8}" x2="${padL}" y2="${H-16}"/></svg>`;
+  return s;
+}
+
+/* Narrow viewBox: these sit in half-width cards, so a wide one would
+   shrink the labels to nothing when the SVG scales down. */
+function simpleBars(rows, color, aria){
+  const W = 440, rowH = 25, barH = 11, padL = 118, padR = 34, padT = 6;
+  const H = padT + rows.length * rowH + 6;
+  const max = Math.max(...rows.map(r => r[1]), 1);
+  const x = v => padL + (v / max) * (W - padL - padR);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}"><g class="barg">`;
+  rows.forEach((r, i) => {
+    const y = padT + i * rowH;
+    const w = Math.max(r[1] > 0 ? 3 : 0, x(r[1]) - padL);
+    s += `<text class="cat" x="${padL-10}" y="${y + barH + 1}" text-anchor="end">${esc(r[0])}</text>`;
+    s += `<g><title>${esc(r[0])}: ${r[1]}</title>`;
+    s += `<rect x="${padL}" y="${y}" width="${w}" height="${barH}" fill="${color}" rx="4"/>`;
+    s += `<text class="val" x="${padL + w + 6}" y="${y + barH}">${r[1]}</text></g>`;
+  });
+  return s + `</g></svg>`;
+}
+
+function render(d){
+  const colors = CONDS.map(c => cvar(c[2]));
+  const series = CONDS.map((c, i) => ({ key: c[0], label: c[1], color: colors[i] }));
+  const perCell = Math.round(TARGET_TOTAL / 3);
+  const done = d.completed || 0;
+  const pct = Math.min(100, Math.round(done / TARGET_TOTAL * 100));
+
+  const condCounts = CONDS.map(c => d.byCondition[c[0]] || 0);
+  const lowest = Math.min(...condCounts), highest = Math.max(...condCounts);
+  const spread = highest - lowest;
+  const behind = CONDS.filter((c, i) => condCounts[i] === lowest && spread > 0).map(c => c[1]);
+
+  const bandGroups = BANDS.map(([n, lab]) => ({
+    label: lab,
+    v: Object.fromEntries(CONDS.map(c => [c[0], d.byConditionBand[c[0] + "|" + n] || 0]))
+  }));
+  const bandTotals = BANDS.map(([n]) => d.byBand[n] || 0);
+  const thinBands = BANDS.filter((b, i) => bandTotals[i] < Math.round(TARGET_TOTAL / 8 * 0.6)).map(b => b[1]);
+
+  // Fixed lists in a fixed order, zeros included.
+
+  const genders = GENDERS.map(g => [g, (d.byGender || {})[g] || 0]);
+  const timeRows = TIME_BANDS.map(t => [t + " sec", (d.byTimeBand || {})[t] || 0]);
+  const screenOuts = Object.entries(d.byScreenOut || {}).sort((a, b) => b[1] - a[1]);
+  const sources = Object.entries(d.bySource || {}).sort((a, b) => b[1] - a[1]);
+
+  let h = `
+  <div class="card">
+    <h2>Responses collected</h2>
+    <p class="sub">Completed responses, excluding people screened out.</p>
+    <div class="hero"><div class="big">${done}</div><div class="of">of ${TARGET_TOTAL} &nbsp;&middot;&nbsp; ${pct}%</div></div>
+    <div class="track"><i style="width:${pct}%"></i></div>
+    <div class="tiles">
+      ${CONDS.map((c, i) => `<div class="tile"><div class="k"><i style="background:${colors[i]}"></i>${c[1]}</div>
+        <div class="v">${condCounts[i]}</div><div class="d">${perCell - condCounts[i] > 0 ? (perCell - condCounts[i]) + " to go" : "target met"}</div></div>`).join("")}
+      <div class="tile"><div class="k">Screened out</div><div class="v">${d.screened_out || 0}</div>
+        <div class="d">${d.total ? Math.round((d.screened_out||0)/d.total*100) : 0}% of all starts</div></div>
+    </div>
+    ${spread > 0 ? `<p class="note">Condition cells differ by ${spread}. Lowest right now: ${behind.join(", ")}. The server balances automatically within each salary band, so this evens out on its own as more people come in.</p>` : ""}
+  </div>
+
+  <div class="card">
+    <h2>Salary band by condition</h2>
+    <div class="legend">${CONDS.map((c, i) => `<span><i style="background:${colors[i]}"></i>${c[1]}</span>`).join("")}</div>
+    ${groupedBars(bandGroups, series, { target: Math.round(TARGET_TOTAL / 8 / 3), aria: "Responses by salary band and condition" })}
+    ${thinBands.length ? `<p class="note">Thin bands to push on: ${thinBands.join(", ")}.</p>` : ""}
+    <details><summary>Show as a table</summary>
+      <table><thead><tr><th>Salary band</th>${CONDS.map(c => `<th>${c[1]}</th>`).join("")}<th>Total</th></tr></thead><tbody>
+      ${BANDS.map(([n, lab], i) => `<tr><td>${lab}</td>${CONDS.map(c => `<td>${d.byConditionBand[c[0]+"|"+n]||0}</td>`).join("")}<td>${bandTotals[i]}</td></tr>`).join("")}
+      </tbody></table></details>
+  </div>
+
+  <div class="row2">
+    <div class="card">
+      <h2>Gender</h2>
+      <p class="sub">A recruitment dimension, so worth watching.</p>
+      ${simpleBars(genders, colors[0], "Responses by gender")}
+    </div>
+    <div class="card">
+      <h2>Recruitment channel</h2>
+      <p class="sub">From the <code>?src=</code> tag on the link you shared.</p>
+      ${sources.length ? simpleBars(sources, colors[1], "Responses by recruitment channel") : '<p class="sub">No responses yet.</p>'}
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="card">
+      <h2>Where people drop out</h2>
+      <p class="sub">Everyone who started but was screened out, and the question that stopped them.</p>
+      ${screenOuts.length ? simpleBars(screenOuts, colors[1], "Screen-outs by reason") : '<p class="sub">Nobody screened out yet.</p>'}
+    </div>
+    <div class="card">
+      <h2>Time on the job listing</h2>
+      <p class="sub">Seconds spent on the job listing screen. The button unlocks at 3 seconds, so nothing can fall below that.</p>
+      ${simpleBars(timeRows, colors[2], "Time spent on the job listing")}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Data quality</h2>
+    <p class="sub">Checks that decide who stays in the analysis.</p>
+    <div class="tiles">
+      <div class="tile"><div class="k">Failed recall check</div><div class="v">${d.recall_fail||0}</div>
+        <div class="d">${done ? Math.round((d.recall_fail||0)/done*100) : 0}% of completions</div></div>
+      <div class="tile"><div class="k">Revised after the job listing</div><div class="v">${d.revised||0}</div>
+        <div class="d">went back and changed a piped answer</div></div>
+      <div class="tile"><div class="k">Usable now</div><div class="v">${Math.max(0, done - (d.recall_fail||0))}</div>
+        <div class="d">after the recall check</div></div>
+    </div>
+  </div>`;
+  $("#root").innerHTML = h;
+  $("#meta").textContent = "Updated " + new Date().toLocaleTimeString() + ". Refreshes on its own every minute.";
+}
+
+function setupScreen(msg){
+  $("#meta").textContent = "Not connected yet.";
+  $("#root").innerHTML = `
+    <div class="card">
+      <h2>Connect this tracker to your responses</h2>
+      <p class="sub">One time only. After this it opens straight to your numbers on this device.</p>
+      ${msg ? `<p class="err" style="margin:0 0 14px">${esc(msg)}</p>` : ""}
+      <ol class="steps">
+        <li>Open the Google Sheet your responses go into.</li>
+        <li>Go to <strong>Extensions &rarr; Apps Script</strong>.</li>
+        <li>Click <strong>Deploy &rarr; Manage deployments</strong>, and copy the <strong>Web app URL</strong>.
+            It looks like <code>https://script.google.com/macros/s/AKfy&hellip;/exec</code></li>
+        <li>Paste it below and press Connect.</li>
+      </ol>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">
+        <input id="ep" type="url" placeholder="https://script.google.com/macros/s/.../exec"
+          style="flex:1 1 320px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;
+                 background:var(--surface-1);color:var(--text-primary);font:inherit;font-size:14px">
+        <button id="connect" type="button" style="border-color:var(--series-1);background:var(--series-1);color:#fff">Connect</button>
+      </div>
+      <p class="sub" style="margin-top:14px">Paste the same URL into <code>ENDPOINT</code> near the top of the questionnaire file, so the form saves to the same sheet.</p>
+    </div>`;
+  const go = () => {
+    const v = $("#ep").value.trim();
+    if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(v)){
+      return setupScreen("That does not look like an Apps Script Web app URL. It must start with https://script.google.com/macros/s/ and end with /exec");
+    }
+    ENDPOINT = v;
+    try { localStorage.setItem("sa_endpoint", v); } catch(e){}
+    $("#meta").textContent = "Connecting…"; load();
+  };
+  $("#connect").addEventListener("click", go);
+  $("#ep").addEventListener("keydown", e => { if(e.key === "Enter") go(); });
+}
+
+function disconnect(){
+  try { localStorage.removeItem("sa_endpoint"); } catch(e){}
+  ENDPOINT = ""; setupScreen("");
+}
+
+async function load(){
+  if(!ENDPOINT){ setupScreen(""); return; }
+  try{
+    const d = await jsonp(ENDPOINT + (ENDPOINT.includes("?") ? "&" : "?") + "action=stats&t=" + Date.now());
+    if(!d || !d.ok) throw new Error(d && d.error ? d.error : "bad reply");
+    render(d);
+  }catch(err){
+    setupScreen("Could not reach that backend (" + err.message + "). Check the URL, and that the deployment's " +
+      "“Who has access” is set to Anyone.");
+  }
+}
+$("#refresh").addEventListener("click", load);
+$("#change").addEventListener("click", disconnect);
+load();
+setInterval(() => { if(ENDPOINT) load(); }, 60000);
+</script>
+</body>
+</html>
