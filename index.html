@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light only">
+<!-- Browsers hold on to a page they have already seen, which is why replacing the file
+     on the host did not change what anyone saw. These tell a browser to ask the server
+     every time instead of trusting the copy it kept. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Study of Workplace Experiences and Career Perceptions</title>
 <style>
   /* One light palette, deliberately not responsive to the device's dark mode. A phone
@@ -219,6 +225,15 @@
 
   .end{text-align:center;padding:40px 8px}
   .end h2{font-size:23px}
+  /* The ask to pass it on, on the closing screen. Somebody who has just finished is
+     already on their phone and already knows what they would be forwarding, which is
+     why this sits here rather than in a reminder nobody can send. */
+  .share{background:var(--powder);border:1.5px solid var(--powder-line);border-radius:var(--radius);
+    padding:19px 16px 18px;margin:0 0 26px}
+  .share p{margin:0 0 14px;font-size:var(--fs-callout);font-weight:700}
+  .share a{display:inline-block;background:var(--blue);color:#fff;text-decoration:none;
+    font-weight:600;padding:12px 26px;border-radius:11px;font-size:15.5px}
+  .share a:hover{background:var(--blue-dark)}
 
   @media (max-width:620px){
     /* The phone sizes live in their own variables, so a laptop change never drags the
@@ -1116,6 +1131,26 @@ const DONE_KEY = "sa_completed";
 function markDone(){ try { localStorage.setItem(DONE_KEY, new Date().toISOString()); } catch(e){} }
 function alreadyDone(){ try { return !!localStorage.getItem(DONE_KEY); } catch(e){ return false; } }
 
+/* The recruitment message, word for word as it goes out on WhatsApp. The link is read
+   off the address bar rather than written down here, so it can never point somewhere
+   the form no longer lives. */
+function formURL(){ return location.href.split("?")[0].split("#")[0]; }
+function shareWA(){
+  return "https://wa.me/?text=" + encodeURIComponent(`Hello!
+
+I am Kirti Bhardwaj, an undergraduate Psychology student at MIT-WPU, currently conducting a research study as part of my Undergraduate Dissertation.
+
+If you are *between the age of 22 and 60, currently employed full-time in a private-sector organisation in India, and have been employed in your current organisation for at least 9 months*, I would be very grateful if you could participate in my study by completing the questionnaire below.
+
+The questionnaire will take approximately *10 to 12 minutes* to complete. Your responses are confidential and will be used solely for academic research.
+
+If you meet the above criteria, please fill out the form using the link below:
+
+${formURL()}
+
+Thank you for taking the time to contribute to my research. Your response would be greatly appreciated!`);
+}
+
 function paintEnd(msg, debrief, offerReturn){
   if(offerReturn){
     $("#main").innerHTML = `<div class="end"><h2>${esc(msg)}</h2>
@@ -1131,6 +1166,8 @@ function paintEnd(msg, debrief, offerReturn){
   }
   $("#main").innerHTML = debrief ? `
     <div class="end"><h2>Thank you for participating!</h2>
+    <div class="share"><p>Please send it to 5 more people!</p>
+    <a id="shareWA" href="#" target="_blank" rel="noopener">Send on WhatsApp</a></div>
     <p>This study examines how employed adults form beliefs about the compensation they could obtain for their current role in the job market, and how such beliefs relate to their evaluations of their present employment.</p>
     <p>The job listing you saw was a hypothetical example constructed for the purposes of this research. It is not a real vacancy, and the compensation range on it was set for the purposes of this study rather than drawn from the market. Please do not treat it as a guide to your own pay.</p>
     <p>Your responses will remain anonymous and confidential.</p>
@@ -1139,6 +1176,7 @@ function paintEnd(msg, debrief, offerReturn){
     <p style="margin-top:22px">Thank you once again for your valuable participation and contribution to this research.</p>
     <p id="saveWarn" style="display:none;color:var(--warn);font-weight:600">Your connection dropped while saving. Your answers are stored on this device. Please reopen this link once while online and they will be sent automatically.</p></div>`
     : `<div class="end"><h2>${esc(msg)}</h2></div>`;
+  const sw = $("#shareWA"); if(sw) sw.href = shareWA();
   document.querySelector(".nav").style.display = "none";
   $("#prog").style.width = "100%";
   window.scrollTo(0,0);

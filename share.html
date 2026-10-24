@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pass this study on</title>
+<style>
+  :root{--ink:#0A2E22;--soft:#4A6054;--paper:#FAF7E0;--panel:#fff;--rule:#CBD4C6;
+    --accent:#0F4E5D;--lime:#B8C06B}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:start center;background:var(--paper);
+    color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:22px 16px 40px}
+  main{max-width:470px;width:100%;background:var(--panel);border:1px solid var(--rule);
+    border-radius:14px;padding:22px 18px 20px}
+  .eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);
+    font-weight:700;margin:0 0 6px}
+  h1{font-size:20px;line-height:1.3;margin:0 0 15px;font-weight:700}
+  pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:13.5px;
+    line-height:1.6;background:var(--paper);
+    border:1px solid var(--rule);border-left:3px solid var(--lime);border-radius:10px;
+    padding:13px;margin:0 0 16px;max-height:38vh;overflow:auto}
+  a.go{display:block;text-align:center;background:var(--accent);color:#fff;text-decoration:none;
+    font-weight:600;padding:14px 20px;border-radius:11px;font-size:16px}
+  button.alt{display:block;width:100%;margin-top:9px;font:inherit;font-size:14.5px;font-weight:600;
+    padding:12px;border-radius:11px;border:1.5px solid var(--rule);background:var(--panel);
+    color:var(--ink);cursor:pointer}
+  button.alt:hover{border-color:var(--accent)}
+  .foot{margin:14px 0 0;font-size:12.5px;color:var(--soft);text-align:center}
+  .ok{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">Undergraduate dissertation</p>
+  <h1>Please forward it to five more people!</h1>
+  <pre id="msg"></pre>
+  <a class="go" id="go" href="#">Send on WhatsApp</a>
+  <button class="alt" id="copy" type="button">Copy the message instead</button>
+  <p class="foot">No phone number is shared, in either direction. You choose who receives it.</p>
+</main>
+<script>
+/* The message is shown before the button, not after it. Jumping straight to WhatsApp's
+   contact picker meant people arrived at a "send to" screen having never seen what they
+   were sending, assumed it had not worked, and backed out. */
+var TEXT = "Hello!\n\nI am Kirti Bhardwaj, an undergraduate Psychology student at MIT-WPU, currently conducting a research study as part of my Undergraduate Dissertation.\n\nIf you are *between the age of 22 and 60, currently employed full-time in a private-sector organisation in India, and have been employed in your current organisation for at least 9 months*, I would be very grateful if you could participate in my study by completing the questionnaire below.\n\nThe questionnaire will take approximately *10 to 12 minutes* to complete. Your responses are confidential and will be used solely for academic research.\n\nIf you meet the above criteria, please fill out the form using the link below:\n\nhttps://bhardwajkirti.github.io/UG-dissertation-anchoring-study/\n\nThank you for taking the time to contribute to my research. Your response would be greatly appreciated!";
+var WA = "https://wa.me/?text=" + encodeURIComponent(TEXT);
+document.getElementById("msg").textContent = TEXT;
+document.getElementById("go").href = WA;
+document.getElementById("copy").addEventListener("click", function(){
+  var b = this;
+  function flag(){ b.textContent = "Copied"; b.classList.add("ok");
+    setTimeout(function(){ b.textContent = "Copy the message instead"; b.classList.remove("ok"); }, 1800); }
+  if (navigator.clipboard) { navigator.clipboard.writeText(TEXT).then(flag, flag); return; }
+  var t = document.createElement("textarea");
+  t.value = TEXT; document.body.appendChild(t); t.select();
+  try { document.execCommand("copy"); } catch (e) {}
+  t.remove(); flag();
+});
+</script>
+</body>
+</html>
