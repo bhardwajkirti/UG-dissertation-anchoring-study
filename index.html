@@ -622,8 +622,11 @@ SCREENS = [
     if(y === "" && m === "") return err("e_b4");
     const months = (+y||0)*12 + (+m||0);
     Object.assign(S,{b1:v1, b1e:em, b2:age, b3:g, b4y:(+y||0), b4m:(+m||0), b4_months:months});
-    if(age < 22 || age > 60) return screenOut("Thank you for your interest. Based on your answers, you are not in the group this study is looking for.", "age_outside_range");
-    if(months < 9) return screenOut("Thank you for your interest. Based on your answers, you are not in the group this study is looking for.", "tenure_under_9_months");
+    /* Age and tenure are recorded but no longer turn anybody away. Both are judged after
+       collection against the full data set rather than at the door, so the only thing
+       screened on here is whether the person is in private-sector full-time employment.
+       The bounds left on the age field are a typing check, not an eligibility rule: they
+       ask again rather than ending the questionnaire. */
     return true; } },
 
 /* B2. everything that gets piped into the job listing. */
@@ -997,6 +1000,19 @@ function condCode(c){ return c === "control" ? 0 : (c === "high" ? 1 : (c === "l
 function wordsOf(labels, n){ return (typeof n === "number" && labels[n-1]) ? labels[n-1] : ""; }
 const blank = v => (v === undefined || v === null) ? "" : v;
 
+/* Age and tenure no longer turn anybody away, but the sheet still has to say who falls
+   outside them. The flag goes in the same column and uses the same words as when these
+   were screen-outs, so one look down that column still answers "how many of these can I
+   use", and the rows collected before this change still line up with the ones after.
+   Status tells the two apart: "Screened out" means turned away, "Complete" means they
+   finished and this is a note about their data. */
+function criteriaFlags(){
+  const f = [];
+  if(typeof S.b2 === "number" && (S.b2 < 22 || S.b2 > 60)) f.push("age_outside_range");
+  if(typeof S.b4_months === "number" && S.b4_months < 9) f.push("tenure_under_9_months");
+  return f.join(", ");
+}
+
 function buildRecord(status, screenReason){
   const w = {}, c = {};
   const put = (name, word, code) => { w[name] = blank(word); c[name] = blank(code); };
@@ -1005,7 +1021,7 @@ function buildRecord(status, screenReason){
   same("Participant ID", S.pid || ("L-" + S.localId));
   same("Submitted At", new Date().toISOString());
   put("Status", status, ix(CODE.status, status));
-  same("Screen Out Reason", screenReason || "");
+  same("Screen Out Reason", screenReason || criteriaFlags());
   same("Recruitment Source", S.src || "");
   same("Assignment Method", S.assignment_method || "");
   same("Minutes Taken", blank(S.duration_min));
